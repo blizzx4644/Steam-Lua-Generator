@@ -29,12 +29,15 @@ A Python-based tool with a graphical user interface to download the latest Steam
     ```bash
     python steam_lua_generator.py
     ```
-2.  The graphical user interface will appear.
-3.  (Optional) Change the output directory from the default `lua_output`.
-4.  (Optional) Check "Skip unknown apps" if you only want `.lua` files for recognized Steam games.
-5.  Click the **"Start Generation"** button.
-6.  The process will begin, and the progress bar and status labels will keep you updated.
-7.  Once finished, you will find the generated `.lua` files and reports in the output directory.
+    OR
+    
+    Run `steam_lua_generator.exe`
+3.  The graphical user interface will appear.
+4.  (Optional) Change the output directory from the default `lua_output`.
+5.  (Optional) Check "Skip unknown apps" if you only want `.lua` files for recognized Steam games.
+6.  Click the **"Start Generation"** button.
+7.  The process will begin, and the progress bar and status labels will keep you updated.
+8.  Once finished, you will find the generated `.lua` files and reports in the output directory.
 
 ## Output Files
 
