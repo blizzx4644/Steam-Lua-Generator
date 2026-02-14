@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Lua Generator</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ═══ THEME SYSTEM ═══ */
+        :root, [data-theme="dark"] {
+            --bg:          #0b0e17;
+            --bg2:         #111525;
+            --card:        #161a2c;
+            --card-hover:  #1c2038;
+            --border:      #252a40;
+            --border2:     #2f365a;
+            --accent:      #4f8ff7;
+            --accent2:     #6ea8ff;
+            --accent-bg:   rgba(79,143,247,.08);
+            --accent-border:rgba(79,143,247,.2);
+            --success:     #34d399;
+            --success-bg:  rgba(52,211,153,.08);
+            --warn:        #fbbf24;
+            --warn-bg:     rgba(251,191,36,.08);
+            --danger:      #f87171;
+            --purple:      #a78bfa;
+            --text:        #f1f5f9;
+            --text2:       #94a3b8;
+            --text3:       #64748b;
+            --shadow:      0 8px 32px rgba(0,0,0,.4);
+            --shadow-lg:   0 24px 64px rgba(0,0,0,.6);
+            --glass:       rgba(22,26,44,.85);
+            --logo-glow:   drop-shadow(0 0 20px rgba(79,143,247,.3));
+            --scrollbar:   #334155;
+            --modal-bg:    rgba(0,0,0,.85);
+            --code-bg:     #0d1117;
+            --toggle-bg:   #1e293b;
+            --toggle-knob: #f1f5f9;
+        }
+
+        [data-theme="light"] {
+            --bg:          #f0f2f5;
+            --bg2:         #e8eaef;
+            --card:        #ffffff;
+            --card-hover:  #f8f9fb;
+            --border:      #d1d5db;
+            --border2:     #e5e7eb;
+            --accent:      #2563eb;
+            --accent2:     #3b82f6;
+            --accent-bg:   rgba(37,99,235,.06);
+            --accent-border:rgba(37,99,235,.15);
+            --success:     #059669;
+            --success-bg:  rgba(5,150,105,.06);
+            --warn:        #d97706;
+            --warn-bg:     rgba(217,119,6,.06);
+            --danger:      #dc2626;
+            --purple:      #7c3aed;
+            --text:        #0f172a;
+            --text2:       #475569;
+            --text3:       #94a3b8;
+            --shadow:      0 4px 16px rgba(0,0,0,.08);
+            --shadow-lg:   0 16px 48px rgba(0,0,0,.12);
+            --glass:       rgba(255,255,255,.92);
+            --logo-glow:   none;
+            --scrollbar:   #cbd5e1;
+            --modal-bg:    rgba(15,23,42,.6);
+            --code-bg:     #f1f5f9;
+            --toggle-bg:   #e2e8f0;
+            --toggle-knob: #1e293b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            transition: background .35s, color .35s;
+        }
+
+        /* ═══ TOP BAR ═══ */
+        .topbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            transition: background .35s, border .35s;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 10px; }
+        .topbar-logo { font-size: 1.1rem; font-weight: 800; color: var(--accent); filter: var(--logo-glow); }
+        .topbar-right { display: flex; align-items: center; gap: 14px; }
+
+        /* theme toggle */
+        .theme-toggle {
+            width: 52px; height: 28px; border-radius: 14px;
+            background: var(--toggle-bg); border: none; cursor: pointer;
+            position: relative; transition: background .3s;
+            flex-shrink: 0;
+        }
+        .theme-toggle::after {
+            content: ''; position: absolute;
+            top: 3px; left: 3px; width: 22px; height: 22px;
+            border-radius: 50%; background: var(--toggle-knob);
+            transition: transform .3s cubic-bezier(.4,.0,.2,1), background .3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        [data-theme="light"] .theme-toggle::after { transform: translateX(24px); }
+        .theme-icon { font-size: .85rem; position: absolute; top: 50%; transform: translateY(-50%); pointer-events: none; }
+        .theme-icon.sun  { left: 6px; }
+        .theme-icon.moon { right: 6px; }
+
+        .topbar-link {
+            color: var(--text2); transition: color .2s;
+            display: flex; align-items: center;
+        }
+        .topbar-link:hover { color: var(--text); }
+
+        /* ═══ CONTAINER ═══ */
+        .container {
+            width: 100%; max-width: 880px;
+            margin-top: 72px;
+        }
+
+        /* ═══ HERO ═══ */
+        .hero {
+            text-align: center; padding: 36px 20px 28px;
+            background: linear-gradient(135deg, var(--accent-bg), transparent 60%);
+            border: 1px solid var(--accent-border);
+            border-radius: 16px; margin-bottom: 20px;
+            transition: background .35s, border .35s;
+        }
+        .hero h1 {
+            font-size: 1.8rem; font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 8px;
+        }
+        .hero p { color: var(--text2); font-size: .92rem; }
+
+        /* ═══ INFO BOX ═══ */
+        .info-box {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--accent-bg); border: 1px solid var(--accent-border);
+            padding: 12px 16px; border-radius: 10px; margin-bottom: 16px;
+            font-size: .88rem; color: var(--text2);
+            transition: background .35s, border .35s;
+        }
+        .info-box .info-icon { font-size: 1.1rem; }
+
+        /* ═══ STATS ═══ */
+        .stats {
+            display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px; text-align: center;
+            transition: background .35s, border .35s, transform .2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); border-color: var(--accent-border); }
+        .stat-number { font-size: 1.6rem; font-weight: 800; color: var(--accent); }
+        .stat-label { font-size: .75rem; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+
+        /* ═══ PROGRESS ═══ */
+        .progress-wrap { margin-bottom: 20px; }
+        .progress-bar {
+            width: 100%; height: 4px; background: var(--border);
+            border-radius: 2px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; width: 0%; border-radius: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--purple));
+            transition: width .4s ease;
+        }
+        .status-text { text-align: center; font-size: .82rem; color: var(--text3); margin-top: 8px; }
+
+        /* ═══ SEARCH ═══ */
+        .search-wrap { position: relative; margin-bottom: 20px; }
+        .search-icon {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: var(--text3); font-size: 1rem; pointer-events: none;
+        }
+        .search-input {
+            width: 100%; padding: 14px 16px 14px 42px;
+            border-radius: 12px; border: 2px solid var(--border);
+            background: var(--card); color: var(--text);
+            font-family: inherit; font-size: .95rem;
+            outline: none; transition: border .2s, background .35s, box-shadow .2s;
+        }
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-bg);
+        }
+        .search-input::placeholder { color: var(--text3); }
+        .search-input:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* ═══ RESULTS ═══ */
+        #results { list-style: none; max-height: 460px; overflow-y: auto; border-radius: 12px; margin-bottom: 20px; }
+        #results:empty { display: none; }
+        #results:not(:empty) { border: 1px solid var(--border); background: var(--card); transition: background .35s, border .35s; }
+
+        .result-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            transition: background .15s; cursor: default;
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-item:hover { background: var(--card-hover); }
+
+        .result-img {
+            width: 130px; height: 48px; object-fit: cover;
+            border-radius: 6px; background: var(--bg2); flex-shrink: 0;
+        }
+        .result-info { flex: 1; min-width: 0; }
+        .result-info strong {
+            display: block; font-size: .95rem; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+        .result-sub { font-size: .76rem; color: var(--text3); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+        .result-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+        /* ═══ BUTTONS ═══ */
+        .btn {
+            border: none; border-radius: 8px; cursor: pointer;
+            font-family: inherit; font-weight: 600;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            transition: filter .15s, transform .15s; color: #fff;
+        }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+
+        .btn-sm { padding: 6px 14px; font-size: .78rem; border-radius: 6px; }
+        .btn-md { padding: 12px 20px; font-size: .9rem; }
+
+        .btn-accent  { background: var(--accent); }
+        .btn-success { background: var(--success); }
+        .btn-secondary { background: var(--border2); color: var(--text); }
+        .btn-steamdb { background: #1b9de2; }
+
+        /* ═══ BADGES ═══ */
+        .badge {
+            font-size: .68rem; padding: 2px 7px; border-radius: 4px;
+            font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
+        }
+        .badge-game     { background: rgba(52,211,153,.15); color: var(--success); }
+        .badge-dlc      { background: rgba(251,191,36,.15);  color: var(--warn); }
+        .badge-software { background: rgba(167,139,250,.15); color: var(--purple); }
+        .badge-depot    { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-border); }
+        .badge-source   { font-size: .65rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+        .badge-steam    { background: rgba(102,192,244,.12); color: #66c0f4; }
+        .badge-steamspy { background: rgba(198,212,223,.12); color: #c6d4df; }
+        .badge-none     { background: var(--accent-bg); color: var(--text3); }
+
+        .no-results { text-align: center; color: var(--text3); padding: 32px; font-size: .9rem; }
+
+        /* ═══ LOG ═══ */
+        .log-section { margin-top: 6px; }
+        .log-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .log-header span { font-size: .8rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+        #log {
+            background: var(--code-bg); color: var(--success);
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            padding: 14px 16px; border-radius: 10px;
+            height: 130px; overflow-y: auto; font-size: .78rem;
+            border: 1px solid var(--border);
+            transition: background .35s, border .35s, color .35s;
+        }
+        [data-theme="light"] #log { color: #065f46; }
+
+        /* ═══ MODAL ═══ */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: var(--modal-bg); backdrop-filter: blur(8px);
+            z-index: 1000; display: none;
+            justify-content: center; align-items: flex-start;
+            padding: 30px 15px; overflow-y: auto;
+        }
+        .modal-content {
+            background: var(--card); border-radius: 16px;
+            max-width: 720px; width: 100%;
+            box-shadow: var(--shadow-lg); animation: modalIn .3s ease;
+            margin: auto; border: 1px solid var(--border);
+            transition: background .35s, border .35s;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(24px) scale(.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .modal-img-wrap {
+            position: relative; border-radius: 16px 16px 0 0; overflow: hidden;
+            background: linear-gradient(135deg, var(--bg2), var(--card));
+            min-height: 80px;
+        }
+        .modal-close {
+            position: absolute; top: 12px; right: 14px;
+            background: rgba(0,0,0,.5); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,.1);
+            color: #fff; font-size: 1.2rem; cursor: pointer;
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .2s;
+        }
+        .modal-close:hover { background: rgba(220,38,38,.7); }
+        .detail-header-img { width: 100%; display: block; }
+
+        .detail-body { padding: 24px; }
+        .detail-body h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 10px; }
+        .detail-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+
+        .detail-loading { text-align: center; color: var(--text3); padding: 10px; font-size: .82rem; display: none; }
+        .detail-loading.visible { display: block; }
+
+        .detail-error {
+            color: var(--danger); font-size: .82rem;
+            padding: 10px 14px; background: rgba(248,113,113,.06);
+            border: 1px solid rgba(248,113,113,.15);
+            border-radius: 8px; margin-bottom: 14px; display: none;
+        }
+        .detail-error.visible { display: block; }
+
+        .detail-description {
+            color: var(--text2); font-size: .88rem; line-height: 1.6;
+            margin-bottom: 14px; display: none;
+            padding: 12px 16px; background: var(--bg2);
+            border-radius: 10px; border-left: 3px solid var(--accent);
+            transition: background .35s;
+        }
+        .detail-description.visible { display: block; }
+
+        .detail-extra {
+            display: none; gap: 8px; flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .detail-extra.visible { display: flex; }
+        .extra-pill {
+            display: flex; align-items: center; gap: 5px;
+            background: var(--bg2); padding: 5px 10px;
+            border-radius: 6px; font-size: .8rem; color: var(--text2);
+            border: 1px solid var(--border);
+            transition: background .35s, border .35s;
+        }
+
+        .detail-dates { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .date-card {
+            flex: 1; min-width: 140px;
+            background: var(--bg2); border-radius: 10px;
+            padding: 14px 16px; border-left: 3px solid var(--accent);
+            transition: background .35s;
+        }
+        .date-card.release { border-left-color: var(--purple); }
+        .date-card.update  { border-left-color: var(--warn); }
+        .date-card.lua     { border-left-color: var(--success); }
+        .date-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .5px; color: var(--text3); margin-bottom: 4px; font-weight: 600; }
+        .date-value { font-size: .88rem; font-weight: 600; }
+        .date-sub { font-size: .68rem; color: var(--text3); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+
+        .detail-depots { margin-bottom: 20px; }
+        .detail-depots h3 { font-size: .9rem; font-weight: 700; margin-bottom: 10px; color: var(--accent); }
+        .depot-list {
+            background: var(--bg2); border-radius: 8px; padding: 10px 14px;
+            max-height: 180px; overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace; font-size: .76rem;
+            border: 1px solid var(--border);
+            transition: background .35s, border .35s;
+        }
+        .depot-item { padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; gap: 10px; transition: border .35s; }
+        .depot-item:last-child { border-bottom: none; }
+        .depot-id { color: var(--accent); min-width: 65px; font-weight: 600; }
+        .depot-key { color: var(--text3); word-break: break-all; }
+
+        .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .spinner {
+            display: inline-block; width: 14px; height: 14px;
+            border: 2px solid var(--border); border-top-color: var(--accent);
+            border-radius: 50%; animation: spin .6s linear infinite;
+            vertical-align: middle; margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ═══ SCROLLBAR ═══ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 3px; }
+
+        /* ═══ RESPONSIVE ═══ */
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 1.4rem; }
+            .stats { grid-template-columns: 1fr; gap: 8px; }
+            .result-item { flex-wrap: wrap; gap: 8px; }
+            .result-img { width: 100%; height: 60px; }
+            .result-actions { width: 100%; justify-content: flex-end; }
+            .detail-dates { flex-direction: column; }
+            .detail-actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══ TOP BAR ═══ -->
+<nav class="topbar">
+    <div class="topbar-left">
+        <span class="topbar-logo">🎮 SLG</span>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+            <span class="theme-icon sun">☀️</span>
+            <span class="theme-icon moon">🌙</span>
+        </button>
+        <a href="https://github.com/blizzx4644/Steam-Lua-Generator" target="_blank" class="topbar-link" title="GitHub">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        </a>
+    </div>
+</nav>
+
+<!-- ═══ MAIN ═══ -->
+<div class="container">
+    <div class="hero">
+        <h1>Steam Lua Generator</h1>
+        <p>Generate depot key files instantly — only supported games are shown</p>
+    </div>
+
+    <div class="info-box" id="info-box">
+        <span class="info-icon">ℹ️</span>
+        <span>Loading data…</span>
+    </div>
+
+    <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="status-text" id="status">Loading Python environment…</div>
+    </div>
+
+    <div class="stats" id="stats" style="display:none">
+        <div class="stat-card">
+            <div class="stat-number" id="stat-depots">0</div>
+            <div class="stat-label">Depot Keys</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="stat-supported">0</div>
+            <div class="stat-label">Supported</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="stat-total">0</div>
+            <div class="stat-label">Total Apps</div>
+        </div>
+    </div>
+
+    <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text" id="search-input" placeholder="Search by name or AppID…" disabled>
+    </div>
+
+    <ul id="results"></ul>
+
+    <div class="log-section">
+        <div class="log-header"><span>Console</span></div>
+        <div id="log">Welcome. Initializing…</div>
+    </div>
+</div>
+
+<!-- ═══ DETAIL MODAL ═══ -->
+<div id="detail-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-img-wrap">
+            <button class="modal-close" id="modal-close-btn">&times;</button>
+            <img id="detail-img" class="detail-header-img" alt="">
+        </div>
+        <div class="detail-body">
+            <h2 id="detail-name"></h2>
+            <div id="detail-meta" class="detail-meta"></div>
+            <div id="detail-loading" class="detail-loading"><span class="spinner"></span>Fetching details…</div>
+            <div id="detail-error" class="detail-error"></div>
+            <div id="detail-description" class="detail-description"></div>
+            <div id="detail-extra" class="detail-extra"></div>
+            <div id="detail-dates" class="detail-dates"></div>
+            <div id="detail-depots" class="detail-depots"></div>
+            <div class="detail-actions">
+                <button id="btn-modal-generate" class="btn btn-md btn-accent" style="flex:1">⬇ Generate Lua</button>
+                <a id="detail-steam-link" href="#" target="_blank" class="btn btn-md btn-secondary" style="flex:1;text-decoration:none">🔗 Steam</a>
+                <a id="detail-steamdb-link" href="#" target="_blank" class="btn btn-md btn-steamdb" style="flex:1;text-decoration:none">📊 SteamDB</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ THEME TOGGLE (plain JS) ═══ -->
+<script>
+(function(){
+    var html = document.documentElement;
+    var saved = localStorage.getItem('slg-theme');
+    if (saved) html.setAttribute('data-theme', saved);
+    document.getElementById('theme-toggle').addEventListener('click', function(){
+        var cur = html.getAttribute('data-theme') || 'dark';
+        var next = cur === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('slg-theme', next);
+    });
+})();
+</script>
+
+<!-- ═══ CORS PROXY (plain JS) ═══ -->
+<script>
+window.fetchCORS = async function(url) {
+    var TIMEOUT = 8000;
+    var enc = encodeURIComponent(url);
+    async function attempt(u, unwrap) {
+        var c = new AbortController();
+        var t = setTimeout(function(){ c.abort(); }, TIMEOUT);
+        try {
+            var r = await fetch(u, { signal: c.signal });
+            clearTimeout(t);
+            if (!r.ok) return "";
+            var txt = await r.text();
+            if (!txt || txt.length < 5) return "";
+            if (unwrap) { try { var w=JSON.parse(txt); return w&&w.contents?w.contents:""; } catch(_){return "";} }
+            return txt;
+        } catch(_){ clearTimeout(t); return ""; }
+    }
+    var strats = [
+        [url, false],
+        ["https://api.codetabs.com/v1/proxy?quest="+enc, false],
+        ["https://api.allorigins.win/raw?url="+enc, false],
+        ["https://thingproxy.freeboard.io/fetch/"+url, false],
+        ["https://api.allorigins.win/get?url="+enc, true],
+    ];
+    for (var i=0;i<strats.length;i++){
+        var r = await attempt(strats[i][0], strats[i][1]);
+        if(r) return r;
+    }
+    return "";
+};
+</script>
+
+<!-- ═══ PYTHON ═══ -->
+<script type="py">
+import json, asyncio, bisect
+from datetime import datetime, timezone
+from pyodide.http import pyfetch
+from pyscript import document
+
+DEPOT_KEYS_URL = "https://raw.githubusercontent.com/fylsdy/ManifestHub/refs/heads/main/depotkeys(178%2C474)(By%20Sudama).json"
+GAMES_URL      = "https://raw.githubusercontent.com/jsnli/steamappidlist/refs/heads/master/data/games_appid.json"
+DLC_URL        = "https://raw.githubusercontent.com/jsnli/steamappidlist/refs/heads/master/data/dlc_appid.json"
+SOFTWARE_URL   = "https://raw.githubusercontent.com/jsnli/steamappidlist/refs/heads/master/data/software_appid.json"
+GITHUB_COMMITS = "https://api.github.com/repos/fylsdy/ManifestHub/commits?path=depotkeys(178%2C474)(By%20Sudama).json&per_page=1"
+
+def esc(t):
+    return str(t).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace('"',"&quot;")
+
+def fmt_ts(ts):
+    try: return datetime.fromtimestamp(int(ts),tz=timezone.utc).strftime("%b %d, %Y · %H:%M UTC")
+    except: return "Unknown"
+
+def fmt_iso(s):
+    try:
+        dt=datetime.fromisoformat(str(s).replace("Z","+00:00"))
+        return dt.strftime("%b %d, %Y · %H:%M UTC")
+    except: return str(s)[:10]
+
+class SmartGenerator:
+    def __init__(self):
+        self.depot_keys={}; self.app_names={}; self.app_types={}
+        self.sorted_appids=[]; self.app_depots={}; self.searchable=[]
+        self.depot_keys_date="Unknown"
+
+    def progress(self,p):
+        document.getElementById("progress-fill").style.width=f"{p}%"
+
+    def log(self,m):
+        el=document.getElementById("log")
+        el.innerHTML+=f"<div>> {esc(m)}</div>"
+        el.scrollTop=el.scrollHeight
+
+    async def cors_json(self,url):
+        from js import fetchCORS
+        try:
+            raw=await fetchCORS(url)
+            text=str(raw) if raw else ""
+            if not text or len(text)<5: return None
+            text=text.strip()
+            if not(text.startswith("{") or text.startswith("[")): return None
+            return json.loads(text)
+        except: return None
+
+    async def load_data(self):
+        self.log("📥 Loading depot keys…"); self.progress(10)
+        resp=await pyfetch(DEPOT_KEYS_URL)
+        self.depot_keys=json.loads(await resp.string())
+        self.log(f"✅ {len(self.depot_keys)} depot keys"); self.progress(25)
+        self.log("📅 Checking freshness…"); await self._fetch_depot_date(); self.progress(35)
+        self.log("📥 Loading catalogues…")
+        r_g,r_d,r_s=await asyncio.gather(pyfetch(GAMES_URL),pyfetch(DLC_URL),pyfetch(SOFTWARE_URL))
+        for a in json.loads(await r_g.string()): self.app_names[a["appid"]]=a["name"]; self.app_types[a["appid"]]="game"
+        for a in json.loads(await r_d.string()): self.app_names[a["appid"]]=a["name"]; self.app_types[a["appid"]]="dlc"
+        for a in json.loads(await r_s.string()): self.app_names[a["appid"]]=a["name"]; self.app_types[a["appid"]]="software"
+        self.sorted_appids=sorted(self.app_names.keys()); total=len(self.app_names)
+        self.log(f"✅ {total} apps loaded"); self.progress(65)
+        self._build_mapping(); self.progress(100)
+        sup=len(self.searchable)
+        document.getElementById("status").innerText=f"✅ Ready — {sup} supported apps"
+        document.getElementById("search-input").disabled=False
+        document.getElementById("stats").style.display="grid"
+        document.getElementById("stat-depots").innerText=str(len(self.depot_keys))
+        document.getElementById("stat-supported").innerText=str(sup)
+        document.getElementById("stat-total").innerText=str(total)
+        document.getElementById("info-box").innerHTML=(
+            f"<span class='info-icon'>✅</span><span><strong>{sup}</strong> supported apps · Depot keys updated: <strong>{self.depot_keys_date}</strong></span>"
+        )
+        self.log(f"🎮 Ready! {sup} supported apps")
+
+    async def _fetch_depot_date(self):
+        try:
+            resp=await pyfetch(GITHUB_COMMITS); data=json.loads(await resp.string())
+            if isinstance(data,list) and len(data)>0:
+                self.depot_keys_date=fmt_iso(data[0]["commit"]["committer"]["date"])
+                self.log(f"✅ Keys date: {self.depot_keys_date}"); return
+        except Exception as e: self.log(f"⚠ GitHub: {e}")
+        self.depot_keys_date="Unknown"
+
+    def _build_mapping(self):
+        self.log("🔗 Mapping…"); MAX=100; raw={}
+        for ds in self.depot_keys:
+            did=int(ds); idx=bisect.bisect_right(self.sorted_appids,did)-1
+            if idx<0: continue
+            aid=self.sorted_appids[idx]
+            if did-aid>MAX: continue
+            raw.setdefault(aid,set()).add(did)
+        self.app_depots={a:sorted(s) for a,s in raw.items() if a in self.app_names}
+        self.searchable=[(a,self.app_names[a],self.app_names[a].lower(),str(a)) for a in sorted(self.app_depots)]
+        self.log(f"✅ {len(self.searchable)} apps mapped")
+
+    def depots_for(self,a): return self.app_depots.get(a,[])
+
+    async def fetch_steam_store(self,appid):
+        self.log(f"   🔵 Steam Store…")
+        url=f"https://store.steampowered.com/api/appdetails?appid={appid}"
+        data=await self.cors_json(url)
+        if data:
+            k=str(appid)
+            if isinstance(data.get(k),dict) and data[k].get("success"):
+                info=data[k].get("data",{})
+                if info and isinstance(info,dict): self.log("   ✅ Steam Store OK"); return info
+        self.log("   ⚠ Steam Store failed"); return None
+
+    async def fetch_steamspy(self,appid):
+        self.log(f"   🟡 SteamSpy…")
+        url=f"https://steamspy.com/api.php?request=appdetails&appid={appid}"
+        data=await self.cors_json(url)
+        if data and isinstance(data,dict) and data.get("name"):
+            self.log("   ✅ SteamSpy OK"); return data
+        self.log("   ⚠ SteamSpy failed"); return None
+
+    async def fetch_steam_news(self,appid):
+        url=f"https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid={appid}&count=5&maxlength=0"
+        data=await self.cors_json(url)
+        if data and isinstance(data,dict) and "appnews" in data:
+            items=data["appnews"].get("newsitems",[])
+            if isinstance(items,list):
+                for it in items:
+                    if isinstance(it,dict):
+                        ts=it.get("date",0)
+                        if ts: return fmt_ts(ts),it.get("title","")
+        return None,None
+
+gen=SmartGenerator()
+current_appid=None; current_name=None
+
+async def init():
+    try: await gen.load_data()
+    except Exception as e: gen.log(f"❌ Init: {e}")
+
+async def on_search(event):
+    q=event.target.value.lower().strip()
+    ul=document.getElementById("results"); ul.innerHTML=""
+    if len(q)<2: return
+    c=0
+    for appid,name,nlc,astr in gen.searchable:
+        if q in nlc or q in astr:
+            at=gen.app_types.get(appid,"game"); nd=len(gen.app_depots[appid])
+            li=document.createElement("li"); li.className="result-item"
+            img=document.createElement("img"); img.className="result-img"
+            img.src=f"https://cdn.akamai.steamstatic.com/steam/apps/{appid}/capsule_184x69.jpg"
+            img.alt=name; img.setAttribute("loading","lazy")
+            img.setAttribute("onerror","this.style.display='none'")
+            info=document.createElement("div"); info.className="result-info"
+            info.innerHTML=(
+                f"<strong>{esc(name)}</strong><div class='result-sub'>"
+                f"<span class='badge badge-{at}'>{at}</span>"
+                f"<span class='badge badge-depot'>{nd} depot{'s'*(nd!=1)}</span>"
+                f"<span>AppID {appid}</span></div>"
+            )
+            acts=document.createElement("div"); acts.className="result-actions"
+            bd=document.createElement("button"); bd.className="btn btn-sm btn-accent"; bd.innerText="Details"
+            bd.onclick=lambda e,a=appid,n=name: asyncio.ensure_future(show_details(a,n))
+            bg=document.createElement("button"); bg.className="btn btn-sm btn-success"; bg.innerText="⬇ Lua"
+            bg.onclick=lambda e,a=appid,n=name: do_generate(a,n)
+            acts.appendChild(bd); acts.appendChild(bg)
+            li.appendChild(img); li.appendChild(info); li.appendChild(acts)
+            ul.appendChild(li); c+=1
+            if c>=50: break
+    if c==0:
+        li=document.createElement("li"); li.className="no-results"
+        li.innerHTML="🚫 No supported app matches this search."; ul.appendChild(li)
+
+async def show_details(appid,name):
+    global current_appid,current_name
+    current_appid=appid; current_name=name
+    at=gen.app_types.get(appid,"game"); depots=gen.depots_for(appid)
+    img_el=document.getElementById("detail-img")
+    img_el.src=f"https://cdn.akamai.steamstatic.com/steam/apps/{appid}/header.jpg"
+    img_el.style.display="block"; img_el.setAttribute("onerror","this.style.display='none'")
+    document.getElementById("detail-name").innerText=name
+    document.getElementById("detail-meta").innerHTML=(
+        f"<span class='badge badge-{at}'>{at.upper()}</span>"
+        f"<span style='color:var(--text3);font-size:.85rem'>AppID: {appid}</span>"
+        f"<span class='badge badge-depot'>{len(depots)} depot{'s'*(len(depots)!=1)}</span>"
+        f"<span class='badge-source badge-none' id='detail-source'>⏳</span>"
+    )
+    document.getElementById("detail-loading").className="detail-loading visible"
+    document.getElementById("detail-error").className="detail-error"
+    document.getElementById("detail-error").innerHTML=""
+    document.getElementById("detail-extra").className="detail-extra"
+    document.getElementById("detail-extra").innerHTML=""
+    document.getElementById("detail-description").className="detail-description"
+    document.getElementById("detail-description").innerHTML=""
+    document.getElementById("detail-dates").innerHTML=(
+        "<div class='date-card release'><div class='date-label'>📅 Release Date</div>"
+        "<div class='date-value' id='date-release'><span class='spinner'></span></div></div>"
+        "<div class='date-card update'><div class='date-label'>🔄 Last Update</div>"
+        "<div class='date-value' id='date-update'><span class='spinner'></span></div>"
+        "<div class='date-sub' id='date-update-title'></div></div>"
+        "<div class='date-card lua'><div class='date-label'>🔑 Keys Updated</div>"
+        f"<div class='date-value'>{esc(gen.depot_keys_date)}</div></div>"
+    )
+    dh="<h3>🔑 Depot Keys</h3><div class='depot-list'>"
+    for d in depots:
+        k=gen.depot_keys.get(str(d),"")
+        if k:
+            sh=k if len(k)<=44 else k[:41]+"…"
+            dh+=f"<div class='depot-item'><span class='depot-id'>{d}</span><span class='depot-key'>{esc(sh)}</span></div>"
+        else:
+            dh+=f"<div class='depot-item'><span class='depot-id'>{d}</span><span class='depot-key' style='color:var(--danger)'>no key</span></div>"
+    dh+="</div>"
+    document.getElementById("detail-depots").innerHTML=dh
+    document.getElementById("detail-steam-link").href=f"https://store.steampowered.com/app/{appid}/"
+    document.getElementById("detail-steamdb-link").href=f"https://steamdb.info/app/{appid}/"
+    document.getElementById("detail-modal").style.display="flex"
+    await _fetch_enriched(appid)
+
+async def _fetch_enriched(appid):
+    ld=document.getElementById("detail-loading"); err=document.getElementById("detail-error")
+    ex=document.getElementById("detail-extra"); dc=document.getElementById("detail-description")
+    dr=document.getElementById("date-release"); du=document.getElementById("date-update")
+    dut=document.getElementById("date-update-title"); src_el=document.getElementById("detail-source")
+    gen.log(f"🔍 Details for {appid}…")
+    news_task=gen.fetch_steam_news(appid)
+    details=await gen.fetch_steam_store(appid); source="steam" if details else None
+    if not details: details=await gen.fetch_steamspy(appid); source="steamspy" if details else None
+    news_date,news_title=await news_task
+    if source=="steam":
+        src_el.className="badge-source badge-steam"; src_el.innerText="✓ Steam"
+        _pop_steam(details,dc,ex,dr)
+    elif source=="steamspy":
+        src_el.className="badge-source badge-steamspy"; src_el.innerText="✓ SteamSpy"
+        _pop_spy(details,dc,ex,dr)
+    else:
+        src_el.className="badge-source badge-none"; src_el.innerText="✗ No data"
+        dr.innerText="Unavailable"; dr.style.color="var(--text3)"
+        err.innerHTML="⚠ Could not fetch details. Click <strong>SteamDB</strong> for info."
+        err.className="detail-error visible"
+        gen.log(f"⚠ All sources failed for {appid}")
+    if news_date:
+        du.innerText=str(news_date)
+        if news_title: dut.innerText=str(news_title)
+        gen.log(f"✅ Last update: {news_date}")
+    else:
+        du.innerText="Unavailable"; du.style.color="var(--text3)"
+    ld.className="detail-loading"
+
+def _pop_steam(d,dc,ex,dr):
+    sd=d.get("short_description","")
+    if sd: dc.innerText=sd; dc.className="detail-description visible"
+    parts=[]
+    devs=d.get("developers")
+    if isinstance(devs,list) and devs: parts.append(f"<span class='extra-pill'>👨‍💻 {esc(devs[0])}</span>")
+    pubs=d.get("publishers")
+    if isinstance(pubs,list) and pubs: parts.append(f"<span class='extra-pill'>📦 {esc(pubs[0])}</span>")
+    genres=d.get("genres")
+    if isinstance(genres,list):
+        gs=", ".join(g.get("description","") for g in genres[:3] if isinstance(g,dict))
+        if gs: parts.append(f"<span class='extra-pill'>🏷️ {esc(gs)}</span>")
+    price=d.get("price_overview")
+    if isinstance(price,dict):
+        pf=price.get("final_formatted","")
+        if pf: parts.append(f"<span class='extra-pill'>💰 {esc(pf)}</span>")
+    elif d.get("is_free"): parts.append("<span class='extra-pill'>💰 Free</span>")
+    plat=d.get("platforms",{})
+    if isinstance(plat,dict):
+        pl=[]
+        if plat.get("windows"): pl.append("🪟")
+        if plat.get("mac"): pl.append("🍎")
+        if plat.get("linux"): pl.append("🐧")
+        if pl: parts.append(f"<span class='extra-pill'>{' '.join(pl)}</span>")
+    mc=d.get("metacritic")
+    if isinstance(mc,dict) and mc.get("score"): parts.append(f"<span class='extra-pill'>⭐ {mc['score']}</span>")
+    recm=d.get("recommendations")
+    if isinstance(recm,dict) and recm.get("total"): parts.append(f"<span class='extra-pill'>👥 {recm['total']:,}</span>")
+    if parts: ex.innerHTML="".join(parts); ex.className="detail-extra visible"
+    rel=d.get("release_date",{})
+    if isinstance(rel,dict):
+        rd=rel.get("date","")
+        if rd: dr.innerText=str(rd)
+        elif rel.get("coming_soon"): dr.innerText="Coming Soon"; dr.style.color="var(--warn)"
+        else: dr.innerText="N/A"; dr.style.color="var(--text3)"
+    else: dr.innerText="N/A"; dr.style.color="var(--text3)"
+    gen.log("✅ Steam details loaded")
+
+def _pop_spy(d,dc,ex,dr):
+    parts=[]
+    dev=d.get("developer","")
+    if dev: parts.append(f"<span class='extra-pill'>👨‍💻 {esc(dev)}</span>")
+    pub=d.get("publisher","")
+    if pub: parts.append(f"<span class='extra-pill'>📦 {esc(pub)}</span>")
+    genre=d.get("genre","")
+    if genre: parts.append(f"<span class='extra-pill'>🏷️ {esc(genre)}</span>")
+    try:
+        pc=int(d.get("price","0"))
+        if pc>0: parts.append(f"<span class='extra-pill'>💰 ${pc/100:.2f}</span>")
+        else: parts.append("<span class='extra-pill'>💰 Free</span>")
+    except: pass
+    owners=d.get("owners","")
+    if owners: parts.append(f"<span class='extra-pill'>👥 {esc(owners)}</span>")
+    pos=d.get("positive",0); neg=d.get("negative",0)
+    if pos or neg:
+        t=pos+neg; pct=round(pos/t*100) if t>0 else 0
+        parts.append(f"<span class='extra-pill'>👍 {pct}%</span>")
+    if parts: ex.innerHTML="".join(parts); ex.className="detail-extra visible"
+    dr.innerText="See SteamDB"; dr.style.color="var(--text3)"
+    gen.log("✅ SteamSpy fallback loaded")
+
+def close_modal(e=None): document.getElementById("detail-modal").style.display="none"
+def on_overlay(e):
+    if e.target.id=="detail-modal": close_modal()
+def on_key(e):
+    if e.key=="Escape": close_modal()
+def modal_gen(e=None):
+    if current_appid: do_generate(current_appid,current_name)
+
+def do_generate(appid,name):
+    depots=gen.depots_for(appid)
+    if not depots: gen.log(f"❌ No depots for {name}"); return
+    lua=[f"addappid({appid})"]; v=0
+    for d in depots:
+        k=gen.depot_keys.get(str(d))
+        if k: lua.append(f'addappid({d},0,"{k}")'); v+=1
+    if v==0: gen.log(f"❌ No keys for {name}"); return
+    try:
+        from js import Blob,URL
+        from js import document as jd
+        b=Blob.new(["\n".join(lua)],{type:"text/plain"})
+        u=URL.createObjectURL(b)
+        a=jd.createElement("a"); a.href=u; a.download=f"{appid}.lua"; a.click()
+        URL.revokeObjectURL(u)
+        gen.log(f"✅ {appid}.lua — {v} depots")
+    except Exception as e: gen.log(f"❌ {e}")
+
+document.getElementById("search-input").oninput=on_search
+document.getElementById("modal-close-btn").onclick=close_modal
+document.getElementById("detail-modal").onclick=on_overlay
+document.getElementById("btn-modal-generate").onclick=modal_gen
+from js import document as jsd
+jsd.onkeydown=on_key
+asyncio.ensure_future(init())
+</script>
+</body>
+</html>
